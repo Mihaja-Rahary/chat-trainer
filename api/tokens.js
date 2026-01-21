@@ -1,23 +1,20 @@
 import fs from 'fs';
 import path from 'path';
-import { generateToken } from '../utils/generateToken.js';
+const tokensPath = path.join(process.cwd(), 'data/tokens.json');
 
-const tokensFile = path.join(process.cwd(), 'data/tokens.json');
+// Créer fichier vide si inexistant
+if (!fs.existsSync(tokensPath)) fs.writeFileSync(tokensPath, '[]', 'utf8');
 
 export default function handler(req,res){
-  let tokens = fs.existsSync(tokensFile) ? JSON.parse(fs.readFileSync(tokensFile)) : [];
+  if(req.method !== 'POST') return res.status(405).json({error:'Method not allowed'});
+  const { role, requesterRole, createdBy } = req.body;
+  if(!role || !requesterRole || !createdBy) return res.status(400).json({error:'Paramètre manquant'});
 
-  if(req.method==="POST"){
-    const {role, requesterRole} = req.body;
-    if(requesterRole==="chatter") return res.status(403).json({error:"Pas autorisé"});
-    
-    const token = generateToken(16);
-    tokens.push({token, role, used:false, createdBy:requesterRole});
-    fs.writeFileSync(tokensFile,JSON.stringify(tokens,null,2));
-    return res.status(200).json({token});
-  }
+  const token = Math.random().toString(36).substring(2,12);
 
-  if(req.method==="GET") return res.status(200).json(tokens);
+  const tokensData = JSON.parse(fs.readFileSync(tokensPath,'utf8'));
+  tokensData.push({ token, role, requesterRole, createdBy, used:false, createdAt: new Date().toISOString() });
+  fs.writeFileSync(tokensPath, JSON.stringify(tokensData,null,2));
 
-  return res.status(400).json({error:"Methode invalide"});
+  res.status(200).json({token});
 }
