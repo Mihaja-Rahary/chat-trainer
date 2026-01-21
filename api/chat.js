@@ -5,40 +5,43 @@ export default async function handler(req, res) {
 
   const { message, persona } = req.body;
 
-  const systemPrompt = `
-You simulate a male fan on an adult platform.
-Persona: ${persona}
+  const prompt = `
+You simulate a male fan chatting on a platform.
+Personality: ${persona}
 
-Behaviors:
-- Respond naturally, sometimes short, sometimes hesitant.
-- Do NOT help the user sell directly.
-- React emotionally and realistically.
+Rules:
+- Answer naturally.
+- Sometimes short, sometimes hesitant.
+- Stay realistic and emotional.
+- Never explain that you are an AI.
 - Stay in character.
-- The goal is to train GFE discovery and escalation skills.
+
+Agent message: "${message}"
+Fan answer:
 `;
 
   try {
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=" +
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" +
         process.env.GEMINI_API_KEY,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [
-            { role: "user", parts: [{ text: systemPrompt + "\nUser: " + message }] }
-          ]
+          contents: [{ parts: [{ text: prompt }] }]
         })
       }
     );
 
     const data = await response.json();
-    const text =
-      data.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "No response";
+    const reply =
+      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Hmm… je sais pas trop quoi répondre 😅";
 
-    res.status(200).json({ reply: text });
-  } catch (e) {
-    res.status(500).json({ error: "AI error" });
+    res.status(200).json({ reply });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ reply: "Erreur IA" });
   }
 }
