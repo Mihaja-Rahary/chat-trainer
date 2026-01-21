@@ -3,50 +3,185 @@
 <head>
   <title>Chat Trainer</title>
   <style>
-    body { font-family: Arial; background:#111; color:#eee; padding:20px; }
-    #chat { height:400px; overflow:auto; border:1px solid #333; padding:10px; margin-bottom:10px;}
-    input, select, button { padding:8px; margin:5px; }
+    body {
+      margin:0;
+      font-family: Arial;
+      background:#0f0f0f;
+      color:#eee;
+    }
+    #app {
+      display:flex;
+      height:100vh;
+    }
+    #fans {
+      width:260px;
+      border-right:1px solid #333;
+      padding:10px;
+      overflow:auto;
+    }
+    .fan {
+      padding:8px;
+      cursor:pointer;
+      border-bottom:1px solid #222;
+    }
+    .fan:hover {
+      background:#222;
+    }
+    #chatZone {
+      flex:1;
+      display:flex;
+      flex-direction:column;
+    }
+    #chat {
+      flex:1;
+      padding:10px;
+      overflow:auto;
+    }
+    #inputZone {
+      display:flex;
+      border-top:1px solid #333;
+      padding:10px;
+    }
+    input {
+      flex:1;
+      padding:8px;
+      background:#111;
+      color:white;
+      border:1px solid #333;
+    }
+    button {
+      margin-left:8px;
+      padding:8px 12px;
+    }
+    #stats {
+      font-size:12px;
+      padding:5px;
+      background:#111;
+      border-top:1px solid #222;
+    }
   </style>
 </head>
 <body>
 
-<h2>🔥 Chat Trainer</h2>
+<div id="app">
+  <div id="fans">
+    <button onclick="createFan()">+ Nouveau fan</button>
+    <div id="fanList"></div>
+  </div>
 
-<select id="persona">
-  <option>Curieux</option>
-  <option>Timide</option>
-  <option>Chaud</option>
-  <option>Suspicious</option>
-  <option>Lonely</option>
-</select>
+  <div id="chatZone">
+    <div id="chat"></div>
 
-<div id="chat"></div>
+    <div id="inputZone">
+      <input id="msg" placeholder="Votre message..." />
+      <button onclick="send()">Envoyer</button>
+    </div>
 
-<input id="msg" placeholder="Tape ton message..." size="50"/>
-<button onclick="send()">Envoyer</button>
+    <div id="stats"></div>
+  </div>
+</div>
 
 <script>
-async function send() {
-  const msg = document.getElementById("msg").value;
-  if (!msg) return;
+let fans = [];
+let currentFan = null;
+let lastAgentMessageTime = null;
+let responseTimes = [];
+let totalMessages = 0;
 
+async function loadFans() {
+  const res = await fetch("/api/fans");
+  fans = await res.json();
+
+  const list = document.getElementById("fanList");
+  list.innerHTML = "";
+
+  fans.forEach(f => {
+    const div = document.createElement("div");
+    div.className = "fan";
+    div.innerText = f.pseudo;
+    div.onclick = () => selectFan(f.id);
+    list.appendChild(div);
+  });
+}
+
+async function createFan() {
+  await fetch("/api/fans", { method:"POST" });
+  loadFans();
+}
+
+function selectFan(id) {
+  currentFan = fans.find(f => f.id === id);
+  renderChat();
+}
+
+function renderChat() {
   const chat = document.getElementById("chat");
-  chat.innerHTML += "<div><b>Agent:</b> " + msg + "</div>";
+  chat.innerHTML = "";
+
+  if (!currentFan) return;
+
+  currentFan.messages.forEach(m => {
+    chat.innerHTML += `<div><b>${m.from}:</b> ${m.text}</div>`;
+  });
+
+  chat.scrollTop = chat.scrollHeight;
+}
+
+async function send() {
+  if (!currentFan) return alert("Choisis un fan.");
+
+  const input = document.getElementById("msg");
+  const text = input.value;
+  if (!text) return;
+
+  input.value = "";
+  totalMessages++;
+
+  currentFan.messages.push({
+    from: "agent",
+    text,
+    time: Date.now()
+  });
+
+  renderChat();
+  lastAgentMessageTime = Date.now();
 
   const res = await fetch("/api/chat", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
     body: JSON.stringify({
-      message: msg,
-      persona: document.getElementById("persona").value
+      message: text,
+      persona: currentFan.persona
     })
   });
 
   const data = await res.json();
-  chat.innerHTML += "<div><b>Fan:</b> " + data.reply + "</div>";
-  chat.scrollTop = chat.scrollHeight;
-  document.getElementById("msg").value = "";
+
+  const fanTime = Date.now();
+  const delay = fanTime - lastAgentMessageTime;
+  responseTimes.push(delay);
+
+  currentFan.messages.push({
+    from: "fan",
+    text: data.reply,
+    time: fanTime
+  });
+
+  renderChat();
+  updateStats();
 }
+
+function updateStats() {
+  const avg =
+    responseTimes.reduce((a,b)=>a+b,0) /
+    (responseTimes.length || 1);
+
+  document.getElementById("stats").innerText =
+    "Messages: " + totalMessages +
+    " | Temps moyen de réponse: " + Math.round(avg/1000) + "s";
+}
+
+loadFans();
 </script>
 
 </body>
