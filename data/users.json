@@ -1,0 +1,10 @@
+[
+  {
+    "username": "superadmin",
+    "email": "superadmin@ofm.com",
+    "password": "motdepassefort",
+    "role": "superadmin",
+    "messages": 0,
+    "status": "actif"
+  }
+]
