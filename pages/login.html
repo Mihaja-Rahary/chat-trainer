@@ -46,6 +46,13 @@ async function login(){
     if(data.role === "admin") window.location.href="admin-dashboard.html";
     else window.location.href="app.html";
   }
+if(data.role === "superadmin"){
+    window.location.href = "superadmin-dashboard.html";
+} else if(data.role === "admin"){
+    window.location.href = "admin-dashboard.html";
+} else {
+    window.location.href = "app.html";
+}
 }
 </script>
 
