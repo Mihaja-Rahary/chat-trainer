@@ -27,6 +27,7 @@ th{ background:#333; color:white;}
 </header>
 
 <div class="container">
+
 <div class="card">
 <h2>Actions rapides</h2>
 <button onclick="generateToken('admin')" style="background:#28a745;color:white;">Créer lien Admin</button>
@@ -54,16 +55,46 @@ th{ background:#333; color:white;}
 <h2>Axes d’amélioration</h2>
 <div id="improvements"></div>
 </div>
+
 </div>
 
 <script>
-// Logout simple
+// Logout
 function logout(){
   localStorage.clear();
   window.location.href="login.html";
 }
 
-// Fetch users et afficher dans le tableau
+// Générer token et afficher lien complet
+async function generateToken(role){
+  try {
+    const superAdminUsername = 'superadmin'; // tu peux le récupérer dynamiquement si login
+    const res = await fetch('/api/tokens', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ role, requesterRole:'superadmin', createdBy:superAdminUsername })
+    });
+    if(!res.ok){
+      const err = await res.json();
+      alert(`Erreur : ${err.error}`);
+      return;
+    }
+    const data = await res.json();
+    const fullLink = `${window.location.origin}/pages/invite.html?token=${data.token}`;
+    alert(`Lien ${role} généré : ${fullLink}`);
+  } catch(e){
+    console.error(e);
+    alert("Erreur lors de la création du lien");
+  }
+}
+
+// Bloquer utilisateur
+async function blockUser(username){
+  // Ici tu peux ajouter ton endpoint backend pour bloquer
+  alert(`Bloquer ${username} (à implémenter côté backend)`);
+}
+
+// Afficher les utilisateurs dans le tableau
 async function fetchUsers(){
   const role='superadmin';
   const res = await fetch(`/api/users?role=${role}`);
@@ -80,7 +111,7 @@ async function fetchUsers(){
   });
 }
 
-// Fetch stats chatteurs
+// Afficher stats chatteurs et axes d'amélioration
 async function fetchStats(){
   const res = await fetch(`/api/chatlog?role=superadmin`);
   const logs = await res.json();
@@ -101,25 +132,15 @@ async function fetchStats(){
 
     // Axes d’amélioration simples
     const impDiv=document.createElement("div");
-    impDiv.innerHTML=`<strong>${u.username}</strong>: ${avgTime>20?'Relancer plus vite':''} ${avgRel<0.7?'Ajouter teasing GFE':''}`;
+    let suggestions="";
+    if(avgTime>20) suggestions += "Relancer plus vite. ";
+    if(avgRel<0.7) suggestions += "Ajouter teasing GFE. ";
+    impDiv.innerHTML=`<strong>${u.username}</strong>: ${suggestions || "Aucun problème majeur"}`;
     imp.appendChild(impDiv);
   });
 }
 
-// Générer token
-async function generateToken(role){
-  const res = await fetch('/api/tokens',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({role, requesterRole:'superadmin'})
-  });
-  const data = await res.json();
-  alert(`Lien ${role} généré: ${data.token}`);
-}
-
-// Bloquer user (à compléter backend)
-function blockUser(username){ alert(`Bloquer ${username} (à implémenter dans backend)`); }
-
+// Init
 fetchUsers();
 fetchStats();
 </script>
