@@ -8,7 +8,7 @@ const tokensFile = path.join(process.cwd(), 'data/tokens.json');
 export default async function handler(req,res){
   const { type } = req.body;
   let users = JSON.parse(fs.readFileSync(usersFile));
-  let tokens = JSON.parse(fs.readFileSync(tokensFile));
+  let tokens = fs.existsSync(tokensFile) ? JSON.parse(fs.readFileSync(tokensFile)) : [];
 
   // Signup via invitation
   if(type === "inviteSignup"){
@@ -33,8 +33,11 @@ export default async function handler(req,res){
     const user = users.find(u=>u.email===email && u.password===password);
     if(!user) return res.status(400).json({error:"Email ou mot de passe invalide"});
 
-    // Retourner rôle pour redirection
-    return res.status(200).json({username:user.username,role:user.role,token:generateToken()});
+    return res.status(200).json({
+      username: user.username,
+      role: user.role,
+      token: generateToken()
+    });
   }
 
   return res.status(400).json({error:"Type invalide"});
