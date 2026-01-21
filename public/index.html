@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chat Trainer</title>
+  <style>
+    body { font-family: Arial; background:#111; color:#eee; padding:20px; }
+    #chat { height:400px; overflow:auto; border:1px solid #333; padding:10px; margin-bottom:10px;}
+    input, select, button { padding:8px; margin:5px; }
+  </style>
+</head>
+<body>
+
+<h2>🔥 Chat Trainer</h2>
+
+<select id="persona">
+  <option>Curieux</option>
+  <option>Timide</option>
+  <option>Chaud</option>
+  <option>Suspicious</option>
+  <option>Lonely</option>
+</select>
+
+<div id="chat"></div>
+
+<input id="msg" placeholder="Tape ton message..." size="50"/>
+<button onclick="send()">Envoyer</button>
+
+<script>
+async function send() {
+  const msg = document.getElementById("msg").value;
+  if (!msg) return;
+
+  const chat = document.getElementById("chat");
+  chat.innerHTML += "<div><b>Agent:</b> " + msg + "</div>";
+
+  const res = await fetch("/api/chat", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      message: msg,
+      persona: document.getElementById("persona").value
+    })
+  });
+
+  const data = await res.json();
+  chat.innerHTML += "<div><b>Fan:</b> " + data.reply + "</div>";
+  chat.scrollTop = chat.scrollHeight;
+  document.getElementById("msg").value = "";
+}
+</script>
+
+</body>
+</html>
