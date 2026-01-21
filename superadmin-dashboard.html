@@ -33,7 +33,7 @@ th,td { padding:10px; border-bottom:1px solid #444; text-align:left;}
 
 <script>
 async function loadUsers(){
-    const res = await fetch("/api/users");
+    const res = await fetch("/api/users"); // Créer un endpoint /api/users qui renvoie users.json
     const users = await res.json();
     const tbody = document.getElementById("users-table");
     tbody.innerHTML = "";
@@ -52,6 +52,13 @@ async function createToken(role){
     });
     const data = await res.json();
     if(data.token) alert(`Lien invitation créé : ${window.location.origin}/invite.html?token=${data.token}`);
+}
+
+// Vérification rôle
+const role = localStorage.getItem("role");
+if(role !== "superadmin"){
+    alert("Accès réservé au Super Admin");
+    window.location.href="login.html";
 }
 
 loadUsers();
