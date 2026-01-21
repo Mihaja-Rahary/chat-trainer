@@ -1,0 +1,57 @@
+<!-- Fichier: pages/invite.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Créer ton compte</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<style>
+body { margin:0; font-family:'Roboto',sans-serif; background: linear-gradient(to right,#ff5f6d,#ffc371); display:flex; justify-content:center; align-items:center; height:100vh; color:#fff;}
+.card { background: rgba(0,0,0,0.85); padding:40px; border-radius:15px; width:400px; text-align:center; box-shadow:0 10px 25px rgba(0,0,0,0.5);}
+h2 { margin-bottom:20px; font-weight:700;}
+input { width:100%; padding:12px; margin:10px 0; border-radius:8px; border:none; font-size:14px;}
+button { width:100%; padding:12px; margin-top:10px; border:none; border-radius:8px; background:#ff5f6d; font-size:16px; font-weight:700; cursor:pointer; transition:0.3s; color:#fff;}
+button:hover { background:#ff8a75; }
+p { font-size:14px; margin-top:10px;}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Créer ton compte</h2>
+  <p>Ton invitation est valide, complète ton profil pour commencer à chatter !</p>
+  <input type="text" id="username" placeholder="Pseudo" required/>
+  <input type="email" id="email" placeholder="Email" required/>
+  <input type="password" id="password" placeholder="Mot de passe" required/>
+  <button onclick="createAccount()">Créer mon compte</button>
+  <p id="msg"></p>
+</div>
+
+<script>
+async function createAccount(){
+  const username = document.getElementById("username").value;
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("token");
+  if(!token) return document.getElementById("msg").innerText="Lien invalide.";
+
+  const res = await fetch("/api/auth",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({ username,email,password,token,type:"inviteSignup" })
+  });
+  const data = await res.json();
+  if(data.error) document.getElementById("msg").innerText = data.error;
+  else {
+    localStorage.setItem("username",username);
+    localStorage.setItem("role",data.role);
+    localStorage.setItem("token",token);
+    window.location.href="app.html";
+  }
+}
+</script>
+
+</body>
+</html>
