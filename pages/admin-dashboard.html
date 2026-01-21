@@ -1,0 +1,89 @@
+<!-- Fichier: pages/admin-dashboard.html -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<style>
+body { margin:0; font-family:'Roboto',sans-serif; background:#f2f2f2; color:#333; }
+header { padding:20px; background:#ff5f6d; color:#fff; text-align:center; font-size:24px; font-weight:700; }
+.container { padding:20px; max-width:1200px; margin:auto; }
+table { width:100%; border-collapse:collapse; margin-top:20px; }
+th,td { padding:12px; text-align:left; border-bottom:1px solid #ddd; }
+th { background:#ff8a75; color:#fff; }
+button { padding:6px 12px; border:none; border-radius:6px; cursor:pointer; background:#ff5f6d; color:#fff; transition:0.3s; }
+button:hover { background:#ff8a75; }
+input, select { padding:6px; border-radius:6px; border:1px solid #ccc; margin-right:10px; }
+.card { background:#fff; padding:15px; border-radius:10px; box-shadow:0 5px 15px rgba(0,0,0,0.1); margin-top:20px; }
+</style>
+</head>
+<body>
+
+<header>Admin Dashboard</header>
+<div class="container">
+  <div class="card">
+    <h3>Créer un lien d'invitation</h3>
+    <select id="role">
+      <option value="chatter">Chatter</option>
+      <option value="admin">Admin</option>
+    </select>
+    <button onclick="generateLink()">Générer le lien</button>
+    <p id="inviteLink"></p>
+  </div>
+
+  <div class="card">
+    <h3>Utilisateurs</h3>
+    <table id="usersTable">
+      <thead>
+        <tr>
+          <th>Pseudo</th>
+          <th>Email</th>
+          <th>Rôle</th>
+          <th>Statut</th>
+          <th>Messages</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+let users = []; // Temporaire, à remplacer par fetch API
+function generateLink(){
+  const role = document.getElementById("role").value;
+  const token = Math.random().toString(36).substring(2,12);
+  const link = `${window.location.origin}/invite.html?token=${token}`;
+  document.getElementById("inviteLink").innerHTML = `Lien : <a href="${link}" target="_blank">${link}</a>`;
+  users.push({username:'',email:'',role,token,status:'invitation',messages:0});
+  renderUsers();
+}
+
+function renderUsers(){
+  const tbody = document.querySelector("#usersTable tbody");
+  tbody.innerHTML = '';
+  users.forEach((u,i)=>{
+    tbody.innerHTML += `<tr>
+      <td>${u.username || '-'}</td>
+      <td>${u.email || '-'}</td>
+      <td>${u.role}</td>
+      <td>${u.status}</td>
+      <td>${u.messages}</td>
+      <td><button onclick="revoke(${i})">Révoquer</button></td>
+    </tr>`;
+  });
+}
+
+function revoke(i){
+  users.splice(i,1);
+  renderUsers();
+}
+
+renderUsers();
+</script>
+
+</body>
+</html>
