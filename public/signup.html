@@ -1,17 +1,70 @@
-<form id="signupForm">
-  <h2>S'inscrire</h2>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>S'inscrire - Chat Trainer</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  body {
+    margin:0;
+    font-family:'Roboto', sans-serif;
+    background: linear-gradient(to right, #ff5f6d, #ffc371);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    color:#fff;
+  }
+  .card {
+    background: rgba(0,0,0,0.7);
+    padding:40px;
+    border-radius:15px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    width:350px;
+    text-align:center;
+  }
+  h2 { margin-bottom:20px; font-weight:700; }
+  input, select {
+    width:100%;
+    padding:12px;
+    margin:10px 0;
+    border-radius:8px;
+    border:none;
+    font-size:14px;
+  }
+  button {
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border:none;
+    border-radius:8px;
+    background:#ff5f6d;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    transition:0.3s;
+    color:#fff;
+  }
+  button:hover { background:#ff8a75; }
+  .link { margin-top:15px; font-size:12px; display:block; color:#fff; text-decoration:underline; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Créer un compte</h2>
   <input type="text" id="username" placeholder="Nom d'utilisateur" required/>
   <input type="password" id="password" placeholder="Mot de passe" required/>
   <select id="role">
     <option value="chatter">Chatter</option>
     <option value="admin">Admin</option>
   </select>
-  <button type="submit">Créer compte</button>
-</form>
+  <button onclick="signup()">S'inscrire</button>
+  <span class="link" onclick="window.location.href='login.html'">Déjà un compte ? Connectez-vous</span>
+</div>
 
 <script>
-document.getElementById("signupForm").addEventListener("submit", async e=>{
-  e.preventDefault();
+async function signup(){
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
   const role = document.getElementById("role").value;
@@ -25,5 +78,8 @@ document.getElementById("signupForm").addEventListener("submit", async e=>{
   if(data.error) return alert(data.error);
   alert("Compte créé !");
   window.location.href="login.html";
-});
+}
 </script>
+
+</body>
+</html>
