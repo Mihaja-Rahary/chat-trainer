@@ -3,65 +3,125 @@
 <head>
 <meta charset="UTF-8">
 <title>Super Admin Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 <style>
-body { font-family:'Roboto',sans-serif; background:#111; color:#fff; margin:0; padding:0;}
-header { background:#ff5f6d; padding:20px; text-align:center; font-size:28px; font-weight:700;}
-section { padding:20px; max-width:1000px; margin:auto;}
-button { padding:10px 20px; border:none; border-radius:8px; background:#ff5f6d; color:#fff; cursor:pointer; margin:5px;}
-button:hover { background:#ff8a75; }
-table { width:100%; border-collapse:collapse; margin-top:20px;}
-th,td { padding:10px; border-bottom:1px solid #444; text-align:left;}
+body { font-family: 'Inter', sans-serif; margin:0; background:#f0f2f5; }
+header{ background:#1f1f1f; color:white; padding:1em 2em; display:flex; justify-content:space-between; align-items:center;}
+header h1{ margin:0; font-weight:600; }
+button{ cursor:pointer; border:none; border-radius:5px; padding:0.5em 1em; margin:0.2em; font-weight:600; }
+.container{ padding:2em; }
+.card{ background:white; padding:1em 1.5em; margin-bottom:1.5em; border-radius:10px; box-shadow:0 3px 10px rgba(0,0,0,0.1);}
+table{ width:100%; border-collapse:collapse; margin-top:1em;}
+th,td{ padding:0.75em; border-bottom:1px solid #ddd; text-align:left;}
+th{ background:#333; color:white;}
+.status-active{color:green; font-weight:600;}
+.status-block{color:red; font-weight:600;}
+.stats-card{display:flex; justify-content:space-between; margin-bottom:0.75em; padding:0.5em 1em; border-radius:8px; background:#f9f9f9;}
 </style>
 </head>
 <body>
 
-<header>Super Admin Dashboard</header>
+<header>
+<h1>Super Admin Dashboard</h1>
+<button onclick="logout()">Logout</button>
+</header>
 
-<section>
-  <h2>Gestion des utilisateurs</h2>
-  <button onclick="createToken('admin')">Créer lien invitation Admin</button>
-  <button onclick="createToken('chatter')">Créer lien invitation Chatter</button>
+<div class="container">
+<div class="card">
+<h2>Actions rapides</h2>
+<button onclick="generateToken('admin')" style="background:#28a745;color:white;">Créer lien Admin</button>
+<button onclick="generateToken('chatter')" style="background:#007bff;color:white;">Créer lien Chatter</button>
+</div>
 
-  <table>
-    <thead>
-      <tr><th>Pseudo</th><th>Email</th><th>Rôle</th><th>Status</th></tr>
-    </thead>
-    <tbody id="users-table"></tbody>
-  </table>
-</section>
+<div class="card">
+<h2>Liste des utilisateurs</h2>
+<table id="usersTable">
+<thead>
+<tr>
+<th>Pseudo</th><th>Rôle</th><th>Messages</th><th>Statut</th><th>Actions</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+
+<div class="card">
+<h2>Stats chatteurs</h2>
+<div id="stats"></div>
+</div>
+
+<div class="card">
+<h2>Axes d’amélioration</h2>
+<div id="improvements"></div>
+</div>
+</div>
 
 <script>
-async function loadUsers(){
-    const res = await fetch("/api/users"); // Créer un endpoint /api/users qui renvoie users.json
-    const users = await res.json();
-    const tbody = document.getElementById("users-table");
-    tbody.innerHTML = "";
-    users.forEach(u=>{
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${u.username}</td><td>${u.email}</td><td>${u.role}</td><td>${u.status}</td>`;
-        tbody.appendChild(tr);
-    });
+// Logout simple
+function logout(){
+  localStorage.clear();
+  window.location.href="login.html";
 }
 
-async function createToken(role){
-    const res = await fetch("/api/tokens",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({role, requesterRole:"superadmin"})
-    });
-    const data = await res.json();
-    if(data.token) alert(`Lien invitation créé : ${window.location.origin}/invite.html?token=${data.token}`);
+// Fetch users et afficher dans le tableau
+async function fetchUsers(){
+  const role='superadmin';
+  const res = await fetch(`/api/users?role=${role}`);
+  const users = await res.json();
+  const tbody = document.querySelector("#usersTable tbody");
+  tbody.innerHTML="";
+  users.forEach(u=>{
+    const tr=document.createElement("tr");
+    const statusClass = u.status==="actif"?"status-active":"status-block";
+    tr.innerHTML=`<td>${u.username}</td><td>${u.role}</td><td>${u.messagesCount||0}</td>
+    <td class="${statusClass}">${u.status}</td>
+    <td><button style="background:#dc3545;color:white;" onclick="blockUser('${u.username}')">Bloquer</button></td>`;
+    tbody.appendChild(tr);
+  });
 }
 
-// Vérification rôle
-const role = localStorage.getItem("role");
-if(role !== "superadmin"){
-    alert("Accès réservé au Super Admin");
-    window.location.href="login.html";
+// Fetch stats chatteurs
+async function fetchStats(){
+  const res = await fetch(`/api/chatlog?role=superadmin`);
+  const logs = await res.json();
+  const container = document.getElementById("stats");
+  const imp = document.getElementById("improvements");
+  container.innerHTML="";
+  imp.innerHTML="";
+  logs.forEach(u=>{
+    const messages = u.messages.length;
+    const avgTime = (u.messages.reduce((a,b)=>a+b.responseTime,0)/messages || 0).toFixed(1);
+    const avgWPM = (u.messages.reduce((a,b)=>a+b.wpm,0)/messages || 0).toFixed(1);
+    const avgRel = (u.messages.reduce((a,b)=>a+b.relevance,0)/messages || 0).toFixed(2);
+
+    const div = document.createElement("div");
+    div.className="stats-card";
+    div.innerHTML=`<strong>${u.username}</strong> | Msgs: ${messages} | Temps moyen: ${avgTime}s | WPM: ${avgWPM} | Pertinence: ${avgRel}`;
+    container.appendChild(div);
+
+    // Axes d’amélioration simples
+    const impDiv=document.createElement("div");
+    impDiv.innerHTML=`<strong>${u.username}</strong>: ${avgTime>20?'Relancer plus vite':''} ${avgRel<0.7?'Ajouter teasing GFE':''}`;
+    imp.appendChild(impDiv);
+  });
 }
 
-loadUsers();
+// Générer token
+async function generateToken(role){
+  const res = await fetch('/api/tokens',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({role, requesterRole:'superadmin'})
+  });
+  const data = await res.json();
+  alert(`Lien ${role} généré: ${data.token}`);
+}
+
+// Bloquer user (à compléter backend)
+function blockUser(username){ alert(`Bloquer ${username} (à implémenter dans backend)`); }
+
+fetchUsers();
+fetchStats();
 </script>
 
 </body>
